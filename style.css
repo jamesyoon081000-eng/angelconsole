@@ -130,3 +130,18 @@ input:focus { border-color: var(--accent); }
 .link { border: 0; background: transparent; color: var(--muted); text-decoration: underline; padding: 4px; }
 .link:hover { background: transparent; color: var(--text); }
 .who { color: var(--muted); font-size: 13px; align-self: center; margin-left: 6px; }
+.msg.ok { color: #7ee2aa; }
+
+/* 계정 목록 */
+.card.wide { max-width: 560px; }
+.tableWrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.accTable { width: 100%; border-collapse: collapse; text-align: left; }
+.accTable th, .accTable td { padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.accTable th { color: var(--muted); font-weight: 600; font-size: 13px; background: #0b0d11; }
+.accTable tr:last-child td { border-bottom: 0; }
+.accTable td:last-child { text-align: right; }
+.accTable button { padding: 4px 10px; font-size: 13px; }
+.resetBox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #12151b; }
+.resetBox .sub { margin: 0; }
+.row { display: flex; gap: 8px; }
+.row button { flex: 1; }
