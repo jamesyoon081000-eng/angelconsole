@@ -14,17 +14,54 @@
   <div class="card">
     <div class="logo">⛏️</div>
     <h1><span class="srvName">마크 서버</span> 콘솔</h1>
-    <div class="tabs" role="tablist">
-      <button type="button" id="tabLogin" class="tab active" role="tab">로그인</button>
-      <button type="button" id="tabSignup" class="tab" role="tab">회원가입</button>
-    </div>
     <form id="authForm">
-      <input id="username" autocomplete="username" placeholder="아이디 (2~16자)" maxlength="16" required>
+      <input id="username" autocomplete="username" placeholder="아이디" maxlength="16" required>
       <input id="password" type="password" autocomplete="current-password" placeholder="비밀번호" required>
-      <input id="password2" type="password" autocomplete="new-password" placeholder="비밀번호 확인" hidden>
       <button type="submit" id="authBtn" class="primary">로그인</button>
     </form>
     <p id="authMsg" class="msg" role="alert"></p>
+  </div>
+</main>
+
+<!-- 계정 만들기 (주인 계정 전용) -->
+<main id="manage" class="center" hidden>
+  <form id="createForm" class="card">
+    <div class="logo">👥</div>
+    <h1>계정 만들기</h1>
+    <p class="sub">여기서 만든 아이디와 비밀번호를 사용할 사람에게 알려주세요.</p>
+    <input id="newUser" autocomplete="off" placeholder="새 아이디 (2~16자, 한글·영문·숫자·_)" maxlength="16" required>
+    <input id="newPw" type="password" autocomplete="new-password" placeholder="새 비밀번호 (6자 이상)" required>
+    <input id="newPw2" type="password" autocomplete="new-password" placeholder="비밀번호 확인" required>
+    <button type="submit" class="primary">계정 만들기</button>
+    <p id="createMsg" class="msg" role="alert"></p>
+    <button type="button" class="link ownerOnly listBtn" hidden>📋 계정 목록</button>
+    <button type="button" id="manageBack" class="link">돌아가기</button>
+  </form>
+</main>
+
+<!-- 계정 목록 + 비밀번호 재설정 (주인 계정 전용) -->
+<main id="list" class="center" hidden>
+  <div class="card wide">
+    <div class="logo">📋</div>
+    <h1>계정 목록</h1>
+    <p class="sub">비밀번호를 잊은 사람이 있으면 재설정 버튼으로 새 비밀번호를 정해주세요.</p>
+    <div class="tableWrap">
+      <table class="accTable">
+        <thead><tr><th>닉네임</th><th>만든 날</th><th></th></tr></thead>
+        <tbody id="accRows"></tbody>
+      </table>
+    </div>
+    <form id="resetForm" class="resetBox" hidden>
+      <p class="sub"><strong id="resetName"></strong> 계정의 새 비밀번호</p>
+      <input id="resetPw" type="password" autocomplete="new-password" placeholder="새 비밀번호 (6자 이상)" required>
+      <input id="resetPw2" type="password" autocomplete="new-password" placeholder="비밀번호 확인" required>
+      <div class="row">
+        <button type="submit" class="primary">재설정</button>
+        <button type="button" id="resetCancel">취소</button>
+      </div>
+    </form>
+    <p id="listMsg" class="msg" role="alert"></p>
+    <button type="button" id="listBack" class="link">돌아가기</button>
   </div>
 </main>
 
@@ -37,6 +74,8 @@
     <input id="adminPw" type="password" autocomplete="off" placeholder="관리자 비밀번호" required>
     <button type="submit" class="primary">콘솔 열기</button>
     <p id="unlockMsg" class="msg" role="alert"></p>
+    <button type="button" class="link ownerOnly manageBtn" hidden>👥 계정 만들기</button>
+    <button type="button" class="link ownerOnly listBtn" hidden>📋 계정 목록</button>
     <button type="button" class="link logoutBtn">로그아웃</button>
   </form>
 </main>
@@ -55,6 +94,8 @@
       <button type="button" data-power="restart">재시작</button>
       <button type="button" data-power="stop" class="danger">정지</button>
       <span class="who">👤 <span class="userName"></span></span>
+      <button type="button" class="ghost ownerOnly manageBtn" hidden>계정 만들기</button>
+      <button type="button" class="ghost ownerOnly listBtn" hidden>계정 목록</button>
       <button type="button" class="ghost logoutBtn">로그아웃</button>
     </div>
   </header>
@@ -68,7 +109,6 @@
   </form>
 </main>
 
-<script src="config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
