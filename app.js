@@ -2,10 +2,10 @@
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-const views = { auth: $('#auth'), unlock: $('#unlock'), app: $('#app') };
+const views = { auth: $('#auth'), unlock: $('#unlock'), app: $('#app'), manage: $('#manage'), list: $('#list') };
 const logEl = $('#log');
 const MAX_DOM_LINES = 1500;
-const BACKEND = String(window.CONSOLE_BACKEND || '').trim().replace(/\/+$/, '');
+let BACKEND = ''; // backend.json 에서 읽음 (서버가 켜질 때마다 자동으로 바뀌는 https 주소)
 const TOKEN_KEY = 'mcConsoleToken';
 
 let token = '';
@@ -15,7 +15,7 @@ let upstreamConnected = false;
 let serverStatus = 'unknown';
 let history = [];
 let histIdx = -1;
-let signupMode = false;
+let me = {};
 
 // ---------- 로그인 토큰 저장 (브라우저가 막아도 동작은 하게)
 try { token = localStorage.getItem(TOKEN_KEY) || ''; } catch {}
@@ -27,7 +27,7 @@ function saveToken(t) {
 // ---------- 서버 API
 function backendProblem() {
     if (location.protocol === 'https:' && BACKEND.startsWith('http:')) {
-        return '콘솔 서버 주소가 https 가 아니라서 이 페이지에서 연결할 수 없어요. (config.js 의 CONSOLE_BACKEND 를 https 주소로 바꿔야 해요)';
+        return '콘솔 서버 주소가 https 가 아니라서 이 페이지에서 연결할 수 없어요. (backend.json 의 url 을 https 주소로 바꿔야 해요)';
     }
     return '';
 }
@@ -35,7 +35,7 @@ function backendProblem() {
 async function api(path, body) {
     const headers = {};
     if (token) headers.Authorization = `Bearer ${token}`;
-    const opt = { headers, cache: 'no-store' };
+    const opt = { headers, cache: 'no-store', signal: AbortSignal.timeout(15000) };
     if (body !== undefined) {
         opt.method = 'POST';
         headers['Content-Type'] = 'application/json';
@@ -59,6 +59,8 @@ function applyMe(data) {
         $$('.srvName').forEach(el => { el.textContent = data.server; });
     }
     $$('.userName').forEach(el => { el.textContent = data.user || ''; });
+    me = data;
+    $$('.ownerOnly').forEach(el => { el.hidden = !data.owner; });
 }
 
 function route(data) {
@@ -88,37 +90,38 @@ function showApp() {
     $('#cmd').focus();
 }
 
-async function boot() {
-    const problem = backendProblem();
-    if (problem) { showAuth(problem); return; }
+const NOT_READY = '콘솔 서버가 꺼져 있거나 아직 준비 중이에요. 잠시 후 새로고침해 주세요.';
+
+async function loadBackend() {
     try {
-        const { data } = await api('/api/me');
-        route(data);
+        const res = await fetch(`backend.json?t=${Date.now()}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        const j = await res.json();
+        BACKEND = String(j.url || '').trim().replace(/\/+$/, '');
     } catch {
-        showAuth('콘솔 서버에 연결할 수 없어요. 잠시 후 새로고침해 주세요.');
+        BACKEND = '';
     }
 }
 
-// ---------- 로그인 / 회원가입
-function setMode(signup) {
-    signupMode = signup;
-    $('#tabLogin').classList.toggle('active', !signup);
-    $('#tabSignup').classList.toggle('active', signup);
-    $('#password2').hidden = !signup;
-    $('#password2').required = signup;
-    $('#password').autocomplete = signup ? 'new-password' : 'current-password';
-    $('#password').placeholder = signup ? '비밀번호 (6자 이상)' : '비밀번호';
-    $('#authBtn').textContent = signup ? '계정 만들기' : '로그인';
-    $('#authMsg').textContent = backendProblem();
+async function boot() {
+    showAuth('콘솔 서버 확인 중…');
+    await loadBackend();
+    const problem = backendProblem();
+    if (problem) { showAuth(problem); return; }
+    try {
+        const { status, data } = await api('/api/me');
+        if (status !== 200) { showAuth(NOT_READY); return; }
+        route(data);
+        if (!data.ok) $('#authMsg').textContent = '';
+    } catch {
+        showAuth(NOT_READY);
+    }
 }
-$('#tabLogin').addEventListener('click', () => setMode(false));
-$('#tabSignup').addEventListener('click', () => setMode(true));
 
+// ---------- 로그인
 $('#authForm').addEventListener('submit', async e => {
     e.preventDefault();
     const username = $('#username').value.trim();
     const password = $('#password').value;
-    if (signupMode && password !== $('#password2').value) { $('#authMsg').textContent = '비밀번호 확인이 달라요.'; return; }
     const problem = backendProblem();
     if (problem) { $('#authMsg').textContent = problem; return; }
 
@@ -126,11 +129,10 @@ $('#authForm').addEventListener('submit', async e => {
     btn.disabled = true;
     $('#authMsg').textContent = '';
     try {
-        const { status, data } = await api(signupMode ? '/api/signup' : '/api/login', { username, password });
+        const { status, data } = await api('/api/login', { username, password });
         if (status === 200 && data.token) {
             saveToken(data.token);
             $('#password').value = '';
-            $('#password2').value = '';
             route(data);
         } else {
             $('#authMsg').textContent = data.error || `실패했어요 (${status})`;
@@ -155,6 +157,143 @@ $('#unlockForm').addEventListener('submit', async e => {
         else { $('#unlockMsg').textContent = data.error || `실패했어요 (${status})`; $('#adminPw').select(); }
     } catch {
         $('#unlockMsg').textContent = '콘솔 서버에 연결할 수 없어요.';
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+// ---------- 계정 만들기 (주인 계정 전용)
+$$('.manageBtn').forEach(b => b.addEventListener('click', () => {
+    show('manage');
+    $('#createMsg').textContent = '';
+    $('#createMsg').className = 'msg';
+    $('#newUser').focus();
+}));
+
+$('#manageBack').addEventListener('click', () => route(me));
+
+$('#createForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = $('#createMsg');
+    msg.className = 'msg';
+    const username = $('#newUser').value.trim();
+    const password = $('#newPw').value;
+    if (password !== $('#newPw2').value) { msg.textContent = '비밀번호 확인이 달라요.'; return; }
+
+    const btn = $('#createForm button[type=submit]');
+    btn.disabled = true;
+    msg.textContent = '';
+    try {
+        const { status, data } = await api('/api/accounts', { username, password });
+        if (status === 200 && data.created) {
+            msg.className = 'msg ok';
+            msg.textContent = `✅ '${data.created}' 계정을 만들었어요.`;
+            $('#newUser').value = '';
+            $('#newPw').value = '';
+            $('#newPw2').value = '';
+            $('#newUser').focus();
+        } else if (status === 401) {
+            saveToken('');
+            showAuth('로그인이 만료됐어요. 다시 로그인해 주세요.');
+        } else {
+            msg.textContent = data.error || `실패했어요 (${status})`;
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+// ---------- 계정 목록 + 비밀번호 재설정 (주인 계정 전용)
+let resetTarget = '';
+
+function fmtDate(iso) {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    return isNaN(d) ? '-' : d.toLocaleDateString('ko-KR');
+}
+
+function closeReset() {
+    resetTarget = '';
+    $('#resetForm').hidden = true;
+    $('#resetPw').value = '';
+    $('#resetPw2').value = '';
+}
+
+function openReset(name) {
+    resetTarget = name;
+    $('#resetName').textContent = name;
+    $('#resetForm').hidden = false;
+    $('#listMsg').className = 'msg';
+    $('#listMsg').textContent = '';
+    $('#resetPw').focus();
+}
+
+async function loadAccounts() {
+    const rows = $('#accRows');
+    const msg = $('#listMsg');
+    rows.textContent = '';
+    msg.className = 'msg';
+    msg.textContent = '불러오는 중…';
+    try {
+        const { status, data } = await api('/api/accounts');
+        if (status === 401) { saveToken(''); showAuth('로그인이 만료됐어요. 다시 로그인해 주세요.'); return; }
+        if (status !== 200) { msg.textContent = data.error || `불러오지 못했어요 (${status})`; return; }
+        msg.textContent = data.accounts.length ? '' : '아직 계정이 없어요.';
+        for (const a of data.accounts) {
+            const tr = document.createElement('tr');
+            const name = document.createElement('td');
+            name.textContent = a.owner ? `${a.name} 👑` : a.name;
+            const created = document.createElement('td');
+            created.textContent = fmtDate(a.created);
+            const act = document.createElement('td');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = '비밀번호 재설정';
+            btn.addEventListener('click', () => openReset(a.name));
+            act.appendChild(btn);
+            tr.append(name, created, act);
+            rows.appendChild(tr);
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    }
+}
+
+$$('.listBtn').forEach(b => b.addEventListener('click', () => {
+    show('list');
+    closeReset();
+    loadAccounts();
+}));
+
+$('#listBack').addEventListener('click', () => { closeReset(); route(me); });
+$('#resetCancel').addEventListener('click', closeReset);
+
+$('#resetForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = $('#listMsg');
+    msg.className = 'msg';
+    const password = $('#resetPw').value;
+    if (password !== $('#resetPw2').value) { msg.textContent = '비밀번호 확인이 달라요.'; return; }
+    if (!confirm(`'${resetTarget}' 계정의 비밀번호를 바꿀까요? 그 계정은 로그아웃돼요.`)) return;
+
+    const btn = $('#resetForm button[type=submit]');
+    btn.disabled = true;
+    try {
+        const { status, data } = await api('/api/accounts/reset', { username: resetTarget, password });
+        if (status === 200 && data.reset) {
+            closeReset();
+            msg.className = 'msg ok';
+            msg.textContent = `✅ '${data.reset}' 계정의 비밀번호를 바꿨어요. 새 비밀번호를 그 사람에게 알려주세요.`;
+        } else if (status === 401) {
+            saveToken('');
+            showAuth('로그인이 만료됐어요. 다시 로그인해 주세요.');
+        } else {
+            msg.textContent = data.error || `실패했어요 (${status})`;
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
     } finally {
         btn.disabled = false;
     }
