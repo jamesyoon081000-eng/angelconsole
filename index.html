@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>마크 콘솔</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 로그인 / 회원가입 -->
+<main id="auth" class="center" hidden>
+  <div class="card">
+    <div class="logo">⛏️</div>
+    <h1><span class="srvName">마크 서버</span> 콘솔</h1>
+    <div class="tabs" role="tablist">
+      <button type="button" id="tabLogin" class="tab active" role="tab">로그인</button>
+      <button type="button" id="tabSignup" class="tab" role="tab">회원가입</button>
+    </div>
+    <form id="authForm">
+      <input id="username" autocomplete="username" placeholder="아이디 (2~16자)" maxlength="16" required>
+      <input id="password" type="password" autocomplete="current-password" placeholder="비밀번호" required>
+      <input id="password2" type="password" autocomplete="new-password" placeholder="비밀번호 확인" hidden>
+      <button type="submit" id="authBtn" class="primary">로그인</button>
+    </form>
+    <p id="authMsg" class="msg" role="alert"></p>
+  </div>
+</main>
+
+<!-- 관리자 비밀번호 (콘솔 잠금 해제) -->
+<main id="unlock" class="center" hidden>
+  <form id="unlockForm" class="card">
+    <div class="logo">🔒</div>
+    <h1>관리자 확인</h1>
+    <p class="sub"><strong class="userName"></strong> 님, 콘솔을 열려면 관리자 비밀번호가 필요해요.</p>
+    <input id="adminPw" type="password" autocomplete="off" placeholder="관리자 비밀번호" required>
+    <button type="submit" class="primary">콘솔 열기</button>
+    <p id="unlockMsg" class="msg" role="alert"></p>
+    <button type="button" class="link logoutBtn">로그아웃</button>
+  </form>
+</main>
+
+<!-- 콘솔 -->
+<main id="app" class="app" hidden>
+  <header class="bar">
+    <div class="title">
+      <span id="dot" class="dot"></span>
+      <strong class="srvName">마크 서버</strong>
+      <span id="state" class="state">연결 중…</span>
+    </div>
+    <div id="stats" class="stats"></div>
+    <div class="actions">
+      <button type="button" data-power="start" class="ok">시작</button>
+      <button type="button" data-power="restart">재시작</button>
+      <button type="button" data-power="stop" class="danger">정지</button>
+      <span class="who">👤 <span class="userName"></span></span>
+      <button type="button" class="ghost logoutBtn">로그아웃</button>
+    </div>
+  </header>
+
+  <div id="log" class="log" aria-live="polite"></div>
+
+  <form id="cmdForm" class="cmd">
+    <span class="prompt">&gt;</span>
+    <input id="cmd" autocomplete="off" spellcheck="false" maxlength="500" placeholder="명령어 입력 (예: list, say 안녕하세요)">
+    <button type="submit">보내기</button>
+  </form>
+</main>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
