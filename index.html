@@ -1,114 +1,154 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title>마크 콘솔</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AngelConsole</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<!-- 로그인 / 회원가입 -->
-<main id="auth" class="center" hidden>
-  <div class="card">
-    <div class="logo">⛏️</div>
-    <h1><span class="srvName">마크 서버</span> 콘솔</h1>
-    <form id="authForm">
-      <input id="username" autocomplete="username" placeholder="아이디" maxlength="16" required>
-      <input id="password" type="password" autocomplete="current-password" placeholder="비밀번호" required>
-      <button type="submit" id="authBtn" class="primary">로그인</button>
-    </form>
-    <p id="authMsg" class="msg" role="alert"></p>
-  </div>
-</main>
-
-<!-- 계정 만들기 (주인 계정 전용) -->
-<main id="manage" class="center" hidden>
-  <form id="createForm" class="card">
-    <div class="logo">👥</div>
-    <h1>계정 만들기</h1>
-    <p class="sub">여기서 만든 아이디와 비밀번호를 사용할 사람에게 알려주세요.</p>
-    <input id="newUser" autocomplete="off" placeholder="새 아이디 (2~16자, 한글·영문·숫자·_)" maxlength="16" required>
-    <input id="newPw" type="password" autocomplete="new-password" placeholder="새 비밀번호 (6자 이상)" required>
-    <input id="newPw2" type="password" autocomplete="new-password" placeholder="비밀번호 확인" required>
-    <button type="submit" class="primary">계정 만들기</button>
-    <p id="createMsg" class="msg" role="alert"></p>
-    <button type="button" class="link ownerOnly listBtn" hidden>📋 계정 목록</button>
-    <button type="button" id="manageBack" class="link">돌아가기</button>
-  </form>
-</main>
-
-<!-- 계정 목록 + 비밀번호 재설정 (주인 계정 전용) -->
-<main id="list" class="center" hidden>
-  <div class="card wide">
-    <div class="logo">📋</div>
-    <h1>계정 목록</h1>
-    <p class="sub">비밀번호를 잊은 사람이 있으면 재설정 버튼으로 새 비밀번호를 정해주세요.</p>
-    <div class="tableWrap">
-      <table class="accTable">
-        <thead><tr><th>닉네임</th><th>만든 날</th><th></th></tr></thead>
-        <tbody id="accRows"></tbody>
-      </table>
-    </div>
-    <form id="resetForm" class="resetBox" hidden>
-      <p class="sub"><strong id="resetName"></strong> 계정의 새 비밀번호</p>
-      <input id="resetPw" type="password" autocomplete="new-password" placeholder="새 비밀번호 (6자 이상)" required>
-      <input id="resetPw2" type="password" autocomplete="new-password" placeholder="비밀번호 확인" required>
-      <div class="row">
-        <button type="submit" class="primary">재설정</button>
-        <button type="button" id="resetCancel">취소</button>
+  <main class="app-shell">
+    <section id="loginView" class="auth-panel">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div>
+          <h1>AngelConsole</h1>
+          <p>마인크래프트 서버 관리 콘솔</p>
+        </div>
       </div>
-    </form>
-    <p id="listMsg" class="msg" role="alert"></p>
-    <button type="button" id="listBack" class="link">돌아가기</button>
-  </div>
-</main>
+      <form id="loginForm" class="form-stack">
+        <label>
+          아이디
+          <input id="loginUsername" autocomplete="username" required>
+        </label>
+        <label>
+          비밀번호
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">로그인</button>
+      </form>
+      <p id="loginMessage" class="message"></p>
+    </section>
 
-<!-- 관리자 비밀번호 (콘솔 잠금 해제) -->
-<main id="unlock" class="center" hidden>
-  <form id="unlockForm" class="card">
-    <div class="logo">🔒</div>
-    <h1>관리자 확인</h1>
-    <p class="sub"><strong class="userName"></strong> 님, 콘솔을 열려면 관리자 비밀번호가 필요해요.</p>
-    <input id="adminPw" type="password" autocomplete="off" placeholder="관리자 비밀번호" required>
-    <button type="submit" class="primary">콘솔 열기</button>
-    <p id="unlockMsg" class="msg" role="alert"></p>
-    <button type="button" class="link ownerOnly manageBtn" hidden>👥 계정 만들기</button>
-    <button type="button" class="link ownerOnly listBtn" hidden>📋 계정 목록</button>
-    <button type="button" class="link logoutBtn">로그아웃</button>
-  </form>
-</main>
+    <section id="unlockView" class="auth-panel hidden">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div>
+          <h1>관리자 잠금 해제</h1>
+          <p>콘솔과 파일 관리자를 열려면 관리자 비밀번호가 필요합니다.</p>
+        </div>
+      </div>
+      <form id="unlockForm" class="form-stack">
+        <label>
+          관리자 비밀번호
+          <input id="adminPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">잠금 해제</button>
+      </form>
+      <button id="logoutFromUnlock" class="ghost-button">로그아웃</button>
+      <p id="unlockMessage" class="message"></p>
+    </section>
 
-<!-- 콘솔 -->
-<main id="app" class="app" hidden>
-  <header class="bar">
-    <div class="title">
-      <span id="dot" class="dot"></span>
-      <strong class="srvName">마크 서버</strong>
-      <span id="state" class="state">연결 중…</span>
-    </div>
-    <div id="stats" class="stats"></div>
-    <div class="actions">
-      <button type="button" data-power="start" class="ok">시작</button>
-      <button type="button" data-power="restart">재시작</button>
-      <button type="button" data-power="stop" class="danger">정지</button>
-      <span class="who">👤 <span class="userName"></span></span>
-      <button type="button" class="ghost ownerOnly manageBtn" hidden>계정 만들기</button>
-      <button type="button" class="ghost ownerOnly listBtn" hidden>계정 목록</button>
-      <button type="button" class="ghost logoutBtn">로그아웃</button>
-    </div>
-  </header>
+    <section id="mainView" class="main-view hidden">
+      <header class="topbar">
+        <div>
+          <h1 id="serverTitle">AngelConsole</h1>
+          <p id="userLine">로그인됨</p>
+        </div>
+        <div class="top-actions">
+          <button id="tabConsole" class="tab-button active" type="button">콘솔</button>
+          <button id="tabFiles" class="tab-button" type="button">파일</button>
+          <button id="tabAccounts" class="tab-button owner-only hidden" type="button">계정</button>
+          <button id="logoutButton" class="ghost-button" type="button">로그아웃</button>
+        </div>
+      </header>
 
-  <div id="log" class="log" aria-live="polite"></div>
+      <section id="consolePanel" class="panel active">
+        <div class="power-row">
+          <button data-power="start" type="button">시작</button>
+          <button data-power="restart" type="button">재시작</button>
+          <button data-power="stop" type="button">정지</button>
+          <button data-power="kill" class="danger" type="button">강제 종료</button>
+          <span id="consoleStatus" class="status-pill">연결 준비 중</span>
+        </div>
+        <pre id="consoleLog" class="console-log"></pre>
+        <form id="commandForm" class="command-row">
+          <input id="commandInput" placeholder="서버 명령어 입력" autocomplete="off">
+          <button type="submit">전송</button>
+        </form>
+      </section>
 
-  <form id="cmdForm" class="cmd">
-    <span class="prompt">&gt;</span>
-    <input id="cmd" autocomplete="off" spellcheck="false" maxlength="500" placeholder="명령어 입력 (예: list, say 안녕하세요)">
-    <button type="submit">보내기</button>
-  </form>
-</main>
+      <section id="filesPanel" class="panel">
+        <div class="file-toolbar">
+          <button id="fileUpButton" type="button">위로</button>
+          <button id="fileRefreshButton" type="button">새로고침</button>
+          <button id="newFolderButton" type="button">새 폴더</button>
+          <label class="upload-button">
+            업로드
+            <input id="uploadInput" type="file" class="hidden">
+          </label>
+          <span id="currentPath" class="path-pill">/</span>
+        </div>
+        <div class="file-layout">
+          <div class="file-list-wrap">
+            <table class="file-table">
+              <thead>
+                <tr>
+                  <th>이름</th>
+                  <th>크기</th>
+                  <th>수정일</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="fileList"></tbody>
+            </table>
+          </div>
+          <div class="editor-wrap">
+            <div class="editor-header">
+              <strong id="editorTitle">파일을 선택하세요</strong>
+              <button id="saveFileButton" type="button" disabled>저장</button>
+            </div>
+            <textarea id="fileEditor" spellcheck="false" disabled></textarea>
+            <p id="fileMessage" class="message"></p>
+          </div>
+        </div>
+      </section>
 
-<script src="app.js"></script>
+      <section id="accountsPanel" class="panel">
+        <div class="account-grid">
+          <form id="createAccountForm" class="tool-card">
+            <h2>계정 만들기</h2>
+            <label>
+              아이디
+              <input id="newAccountUsername" required>
+            </label>
+            <label>
+              비밀번호
+              <input id="newAccountPassword" type="password" required>
+            </label>
+            <button type="submit">생성</button>
+          </form>
+          <form id="resetAccountForm" class="tool-card">
+            <h2>비밀번호 재설정</h2>
+            <label>
+              아이디
+              <input id="resetAccountUsername" required>
+            </label>
+            <label>
+              새 비밀번호
+              <input id="resetAccountPassword" type="password" required>
+            </label>
+            <button type="submit">재설정</button>
+          </form>
+          <div class="tool-card">
+            <h2>계정 목록</h2>
+            <ul id="accountList" class="account-list"></ul>
+          </div>
+        </div>
+        <p id="accountMessage" class="message"></p>
+      </section>
+    </section>
+  </main>
+  <script src="app.js"></script>
 </body>
 </html>
