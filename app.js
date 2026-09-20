@@ -36,7 +36,7 @@ function backendProblem() {
 async function api(path, body) {
     const headers = {};
     if (token) headers.Authorization = `Bearer ${token}`;
-    const opt = { headers, cache: 'no-store', signal: AbortSignal.timeout(15000) };
+    const opt = { headers, cache: 'no-store', signal: AbortSignal.timeout(60000) };
     if (body !== undefined) {
         opt.method = 'POST';
         headers['Content-Type'] = 'application/json';
@@ -447,8 +447,10 @@ $('#editSave').addEventListener('click', async () => {
         } else {
             msg.textContent = data.error || `저장하지 못했어요 (${status})`;
         }
-    } catch {
-        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    } catch (e) {
+        msg.textContent = e.name === 'TimeoutError'
+            ? '저장이 너무 오래 걸려서 끊겼어요. 잠시 후 다시 해주세요.'
+            : '콘솔 서버에 연결할 수 없어요.';
     } finally {
         btn.disabled = false;
     }
