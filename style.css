@@ -189,3 +189,19 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 140, 
     .actions button { padding: 6px 10px; }
     .card { padding: 26px 20px; }
 }
+
+/* 파일 편집 */
+#editArea {
+    width: 100%;
+    background: #0c0f16;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    font: 12.5px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    resize: vertical;
+    outline: none;
+}
+#editArea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 140, 255, .16); }
+#editPath { word-break: break-all; font-family: ui-monospace, Consolas, monospace; }
+.accTable td:last-child { display: flex; gap: 6px; justify-content: flex-end; }
