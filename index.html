@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>마크 콘솔</title>
-<link rel="stylesheet" href="style.css?v=7e55cbcc">
+<link rel="stylesheet" href="style.css?v=bdd26b8f">
 </head>
 <body>
 
@@ -133,6 +133,20 @@
   </div>
 </main>
 
-<script src="app.js?v=e34fa82d"></script>
+<!-- 설정 파일 편집 -->
+<main id="editor" class="center" hidden>
+  <div class="card wide">
+    <h1>파일 편집</h1>
+    <p class="sub" id="editPath"></p>
+    <textarea id="editArea" spellcheck="false" rows="18"></textarea>
+    <div class="row">
+      <button type="button" id="editSave" class="primary">저장</button>
+      <button type="button" id="editCancel">취소</button>
+    </div>
+    <p id="editMsg" class="msg" role="alert"></p>
+  </div>
+</main>
+
+<script src="app.js?v=058e4ff2"></script>
 </body>
 </html>
