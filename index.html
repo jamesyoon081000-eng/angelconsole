@@ -96,6 +96,7 @@
       <span class="who">👤 <span class="userName"></span></span>
       <button type="button" class="ghost ownerOnly manageBtn" hidden>계정 만들기</button>
       <button type="button" class="ghost ownerOnly listBtn" hidden>계정 목록</button>
+      <button type="button" class="ghost filesBtn">📁 파일</button>
       <button type="button" class="ghost logoutBtn">로그아웃</button>
     </div>
   </header>
@@ -107,6 +108,29 @@
     <input id="cmd" autocomplete="off" spellcheck="false" maxlength="500" placeholder="명령어 입력 (예: list, say 안녕하세요)">
     <button type="submit">보내기</button>
   </form>
+</main>
+
+<!-- 마크 서버 파일 -->
+<main id="files" class="center" hidden>
+  <div class="card wide">
+    <div class="logo">📁</div>
+    <h1>서버 파일</h1>
+    <p class="sub" id="filePath">/</p>
+    <div class="row">
+      <button type="button" id="fileUp">⬆ 상위 폴더</button>
+      <button type="button" id="fileRefresh">새로고침</button>
+      <button type="button" id="fileUploadBtn" class="primary">파일 올리기</button>
+      <input type="file" id="fileInput" hidden>
+    </div>
+    <div class="tableWrap">
+      <table class="accTable">
+        <thead><tr><th>이름</th><th>크기</th><th></th></tr></thead>
+        <tbody id="fileRows"></tbody>
+      </table>
+    </div>
+    <p id="fileMsg" class="msg" role="alert"></p>
+    <button type="button" id="filesBack" class="link">돌아가기</button>
+  </div>
 </main>
 
 <script src="app.js"></script>
