@@ -2,7 +2,8 @@
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-const views = { auth: $('#auth'), unlock: $('#unlock'), app: $('#app'), manage: $('#manage'), list: $('#list'), files: $('#files') };
+const views = { auth: $('#auth'), unlock: $('#unlock'), app: $('#app'), manage: $('#manage'), list: $('#list'), files: $('#files'), editor: $('#editor') };
+const TEXT_EXT = /\.(json|ya?ml|txt|properties|cfg|conf|ini|log|toml|md|csv|sk|mcfunction)$/i;
 const logEl = $('#log');
 const MAX_DOM_LINES = 1500;
 let BACKEND = ''; // backend.json 에서 읽음 (서버가 켜질 때마다 자동으로 바뀌는 https 주소)
@@ -344,11 +345,25 @@ async function loadFiles(path = filePath) {
             size.textContent = f.isFile ? fmtSize(f.size) : '';
             const act = document.createElement('td');
             if (f.isFile) {
+                const full = joinPath(filePath, f.name);
+                if (TEXT_EXT.test(f.name)) {
+                    const e = document.createElement('button');
+                    e.type = 'button';
+                    e.textContent = '편집';
+                    e.addEventListener('click', () => openEditor(full));
+                    act.appendChild(e);
+                }
                 const d = document.createElement('button');
                 d.type = 'button';
                 d.textContent = '받기';
-                d.addEventListener('click', () => downloadFile(joinPath(filePath, f.name), d));
+                d.addEventListener('click', () => downloadFile(full, d));
                 act.appendChild(d);
+                const x = document.createElement('button');
+                x.type = 'button';
+                x.className = 'danger';
+                x.textContent = '삭제';
+                x.addEventListener('click', () => deleteFile(full, f.name));
+                act.appendChild(x);
             }
             tr.append(name, size, act);
             rows.appendChild(tr);
@@ -370,6 +385,74 @@ async function downloadFile(path, btn) {
         btn.disabled = false;
     }
 }
+
+async function deleteFile(path, name) {
+    if (!confirm(`'${name}' 을 지울까요? 되돌릴 수 없어요.`)) return;
+    const msg = $('#fileMsg');
+    msg.className = 'msg';
+    msg.textContent = '지우는 중…';
+    try {
+        const { status, data } = await api('/api/files/delete', { path });
+        if (status === 200) {
+            msg.className = 'msg ok';
+            msg.textContent = `🗑 ${name} 지웠어요.`;
+            loadFiles();
+        } else {
+            msg.textContent = data.error || `지우지 못했어요 (${status})`;
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    }
+}
+
+// ---------- 설정 파일 편집
+let editPath = '';
+
+async function openEditor(path) {
+    editPath = path;
+    show('editor');
+    $('#editPath').textContent = path;
+    $('#editArea').value = '';
+    const msg = $('#editMsg');
+    msg.className = 'msg';
+    msg.textContent = '불러오는 중…';
+    try {
+        const { status, data } = await api(`/api/files/read?path=${encodeURIComponent(path)}`);
+        if (status !== 200) { msg.textContent = data.error || `못 읽었어요 (${status})`; return; }
+        $('#editArea').value = data.content ?? '';
+        msg.textContent = '';
+        $('#editArea').focus();
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    }
+}
+
+$('#editCancel').addEventListener('click', () => { show('files'); loadFiles(); });
+
+$('#editSave').addEventListener('click', async () => {
+    const msg = $('#editMsg');
+    const btn = $('#editSave');
+    msg.className = 'msg';
+    if (/\.json$/i.test(editPath)) {
+        try { JSON.parse($('#editArea').value); }
+        catch (e) { msg.textContent = `JSON 형식이 잘못됐어요: ${e.message}`; return; }
+    }
+    btn.disabled = true;
+    msg.textContent = '저장 중…';
+    try {
+        const { status, data } = await api(`/api/files/save?path=${encodeURIComponent(editPath)}`, { content: $('#editArea').value });
+        if (status === 200) {
+            msg.className = 'msg ok';
+            msg.textContent = '✅ 저장했어요. 마크 서버를 재시작해야 적용되는 설정도 있어요.';
+        } else {
+            msg.textContent = data.error || `저장하지 못했어요 (${status})`;
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    } finally {
+        btn.disabled = false;
+    }
+});
 
 $$('.filesBtn').forEach(b => b.addEventListener('click', () => { show('files'); loadFiles('/'); }));
 $('#filesBack').addEventListener('click', () => route(me));
