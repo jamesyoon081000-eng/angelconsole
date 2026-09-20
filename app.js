@@ -2,7 +2,7 @@
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-const views = { auth: $('#auth'), unlock: $('#unlock'), app: $('#app'), manage: $('#manage'), list: $('#list') };
+const views = { auth: $('#auth'), unlock: $('#unlock'), app: $('#app'), manage: $('#manage'), list: $('#list'), files: $('#files') };
 const logEl = $('#log');
 const MAX_DOM_LINES = 1500;
 let BACKEND = ''; // backend.json 에서 읽음 (서버가 켜질 때마다 자동으로 바뀌는 https 주소)
@@ -296,6 +296,118 @@ $('#resetForm').addEventListener('submit', async e => {
         msg.textContent = '콘솔 서버에 연결할 수 없어요.';
     } finally {
         btn.disabled = false;
+    }
+});
+
+// ---------- 마크 서버 파일 보기 / 올리기
+let filePath = '/';
+
+function fmtSize(n) {
+    if (!n) return '-';
+    const u = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+    return `${n < 10 && i ? n.toFixed(1) : Math.round(n)} ${u[i]}`;
+}
+
+function joinPath(dir, name) { return (dir.endsWith('/') ? dir : dir + '/') + name; }
+
+async function loadFiles(path = filePath) {
+    const rows = $('#fileRows');
+    const msg = $('#fileMsg');
+    msg.className = 'msg';
+    msg.textContent = '불러오는 중…';
+    rows.textContent = '';
+    try {
+        const { status, data } = await api(`/api/files/list?path=${encodeURIComponent(path)}`);
+        if (status === 401) { saveToken(''); showAuth('로그인이 만료됐어요. 다시 로그인해 주세요.'); return; }
+        if (status === 403) { showUnlock('관리자 확인이 필요해요.'); return; }
+        if (status !== 200) { msg.textContent = data.error || `불러오지 못했어요 (${status})`; return; }
+
+        filePath = data.path || path;
+        $('#filePath').textContent = filePath;
+        msg.textContent = data.files.length ? '' : '빈 폴더예요.';
+        for (const f of data.files) {
+            const tr = document.createElement('tr');
+            const name = document.createElement('td');
+            if (f.isFile) {
+                name.textContent = `📄 ${f.name}`;
+            } else {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'link';
+                b.textContent = `📁 ${f.name}`;
+                b.addEventListener('click', () => loadFiles(joinPath(filePath, f.name)));
+                name.appendChild(b);
+            }
+            const size = document.createElement('td');
+            size.textContent = f.isFile ? fmtSize(f.size) : '';
+            const act = document.createElement('td');
+            if (f.isFile) {
+                const d = document.createElement('button');
+                d.type = 'button';
+                d.textContent = '받기';
+                d.addEventListener('click', () => downloadFile(joinPath(filePath, f.name), d));
+                act.appendChild(d);
+            }
+            tr.append(name, size, act);
+            rows.appendChild(tr);
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    }
+}
+
+async function downloadFile(path, btn) {
+    btn.disabled = true;
+    try {
+        const { status, data } = await api(`/api/files/url?path=${encodeURIComponent(path)}`);
+        if (status === 200 && data.url) window.open(data.url, '_blank', 'noopener');
+        else $('#fileMsg').textContent = data.error || `받지 못했어요 (${status})`;
+    } catch {
+        $('#fileMsg').textContent = '콘솔 서버에 연결할 수 없어요.';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+$$('.filesBtn').forEach(b => b.addEventListener('click', () => { show('files'); loadFiles('/'); }));
+$('#filesBack').addEventListener('click', () => route(me));
+$('#fileRefresh').addEventListener('click', () => loadFiles());
+$('#fileUp').addEventListener('click', () => {
+    if (filePath === '/') return;
+    loadFiles(filePath.replace(/\/[^/]+\/?$/, '') || '/');
+});
+$('#fileUploadBtn').addEventListener('click', () => $('#fileInput').click());
+
+$('#fileInput').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const msg = $('#fileMsg');
+    msg.className = 'msg';
+    if (file.size > 10 * 1024 * 1024) { msg.textContent = '10MB 까지만 올릴 수 있어요.'; return; }
+    const target = joinPath(filePath, file.name);
+    if (!confirm(`${target} 로 올릴까요? 같은 이름이 있으면 덮어써요.`)) return;
+
+    msg.textContent = '올리는 중…';
+    try {
+        const headers = { 'Content-Type': 'application/octet-stream' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${BACKEND}/api/files/upload?path=${encodeURIComponent(target)}`, {
+            method: 'POST', headers, body: await file.arrayBuffer(),
+        });
+        let data = {};
+        try { data = await res.json(); } catch {}
+        if (res.status === 200) {
+            msg.className = 'msg ok';
+            msg.textContent = `✅ ${file.name} 올렸어요.`;
+            loadFiles();
+        } else {
+            msg.textContent = data.error || `올리지 못했어요 (${res.status})`;
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
     }
 });
 
