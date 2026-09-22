@@ -254,8 +254,38 @@ async function loadAccounts() {
             btn.textContent = '비밀번호 재설정';
             btn.addEventListener('click', () => openReset(a.name));
             act.appendChild(btn);
+            if (!a.owner) {
+                const del = document.createElement('button');
+                del.type = 'button';
+                del.className = 'danger';
+                del.textContent = '계정 삭제';
+                del.addEventListener('click', () => deleteAccount(a.name));
+                act.appendChild(del);
+            }
             tr.append(name, created, act);
             rows.appendChild(tr);
+        }
+    } catch {
+        msg.textContent = '콘솔 서버에 연결할 수 없어요.';
+    }
+}
+
+async function deleteAccount(name) {
+    if (!confirm(`'${name}' 계정을 지울까요? 되돌릴 수 없고, 그 사람은 바로 로그아웃돼요.`)) return;
+    const msg = $('#listMsg');
+    msg.className = 'msg';
+    try {
+        const { status, data } = await api('/api/accounts/delete', { username: name });
+        if (status === 200) {
+            closeReset();
+            await loadAccounts();
+            msg.className = 'msg ok';
+            msg.textContent = `🗑 '${data.deleted}' 계정을 지웠어요.`;
+        } else if (status === 401) {
+            saveToken('');
+            showAuth('로그인이 만료됐어요. 다시 로그인해 주세요.');
+        } else {
+            msg.textContent = data.error || `지우지 못했어요 (${status})`;
         }
     } catch {
         msg.textContent = '콘솔 서버에 연결할 수 없어요.';
